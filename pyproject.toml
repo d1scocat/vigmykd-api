@@ -3,11 +3,18 @@ name = "vigmykd-api"
 version = "0.1.0"
 description = "REST API for vigmykd"
 authors = [
-    { name = "discocat", email = "vigmykd@runderscore.com" }
+    { name = "discokitty", email = "vigmykd@runderscore.com" }
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "fastapi[standard]>=0.136.1"
+    "fastapi[standard]>=0.136.1",
+    "jwt>=1.4.0",
+    "argon2-cffi>=25.1.0",
+    "python-dotenv>=1.2.2",
+    "redis[hiredis]>=7.4.0",
+    "motor>=3.7.1",
+    "aiosmtplib>=5.1.0",
+    "email-validator>=2.3.0"
 ]
 
 license = { file = "LICENSE" }
@@ -16,7 +23,7 @@ license = { file = "LICENSE" }
 dev = [
     "flake8>=6.0",
     "mypy>=1.0",
-    "pytest>=9.0.2"
+    "pytest>=9.0.2" 
 ]
 
 [build-system]
