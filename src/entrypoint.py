@@ -7,32 +7,45 @@ from contextlib import asynccontextmanager
 
 import config  # loads dotenv also
 
-from services import db, redis, mailer
+from services import db, redis, mailer, ServiceHandler
 from routes.router import v1_router
 
 
 @asynccontextmanager
 async def lifespan(api: FastAPI):
-    api.state.redis = await redis.init_redis()
+    redis_service = redis.RedisService(
+        url=os.getenv("REDIS_URL")
+    )
 
-    api.state.mailer = mailer.Mailer(
+    mailer_service = mailer.Mailer(
         smtp_host=os.getenv("SMTP_HOST"),
         smtp_port=os.getenv("SMTP_PORT"),
         smtp_user=os.getenv("SMTP_USER"),
         smtp_pass=os.getenv("SMTP_PASS")
     )
 
-    database = db.Database(
+    db_service = db.Database(
         url=os.getenv("DB_URL"),
         db_name=os.getenv("DB_NAME")
     )
-    await database.init()
 
-    api.state.db = database
+    service_handler = ServiceHandler(config.HEALTHCHECK, [
+        redis_service, 
+        mailer_service,
+        db_service
+    ])
+
+    await service_handler.init_services()
+    await service_handler.start()
+
+    api.state.redis = redis_service
+    api.state.mailer = mailer_service
+    api.state.db = db_service
+    api.state.service_handler = service_handler
 
     yield
 
-    database._client.close()
+    db_service._client.close()
 
 
 def make_app() -> FastAPI:

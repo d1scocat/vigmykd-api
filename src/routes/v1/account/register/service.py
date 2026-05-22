@@ -6,25 +6,25 @@ import uuid
 from email_validator import validate_email, EmailNotValidError
 from fastapi import Depends
 from fastapi.responses import RedirectResponse
-from redis.client import Redis
 
-from config import config
+import config
 
 from dependencies import get_db, get_mailer, get_redis
 from routes.v1.account.register import models
 from services.db import Database
 from services.mailer import Mailer, PreaggregatedMailer
+from services.redis import RedisService
 from utils import err, pwd_ok, pwd_is_pwned, name_ok
 
 
-logger = logging.getLogger("auth.register")
+logger = logging.getLogger("account.register")
 
 
 async def register(
     query: models.RegisterQuery,
     db: Database = Depends(get_db),
     mailer: Mailer = Depends(get_mailer),
-    redis: Redis = Depends(get_redis),
+    redis: RedisService = Depends(get_redis),
 ):
     log_id = uuid.uuid4()
     logger.info(f"▶️ REGATT {log_id}: email={query.email}, nickname={query.nickname}")
@@ -72,7 +72,7 @@ async def register(
         # return err(500, "Could not check for password presence in data breaches")
     
     reg_confirm_code = str(uuid.uuid4())
-    await redis.setex(
+    await redis.redis.setex(
         f"confirm:{reg_confirm_code}",
         config.REG_CONFIRM_CODE_TTL,
         json.dumps({"type": "reg", "email": query.email, "nickname": query.nickname})
@@ -84,7 +84,7 @@ async def register(
         code=reg_confirm_code
     ):
         logger.error(f"❌ REGATT {log_id}: Failed to send confirmation email to {query.email}")
-        await redis.delete(f"confirm:{reg_confirm_code}")
+        await redis.redis.delete(f"confirm:{reg_confirm_code}")
         return err(500, "Could not send the registration confirmation email, try again")
 
     redirect = f"{config.BASE_URL}/api/v1/account/register/confirm"

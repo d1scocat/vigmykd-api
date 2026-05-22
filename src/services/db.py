@@ -1,8 +1,17 @@
+import asyncio
+import logging
+
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pymongo import ASCENDING, TEXT
 
+import config
 
-class Database:
+from services import Service
+
+
+class Database(Service):
+    logger = logging.getLogger("services.db")
+
     def __init__(
         self,
         url: str | None,
@@ -20,6 +29,20 @@ class Database:
         )
 
         self._db = self._client[db_name]
+    
+    async def is_healthy(self) -> bool:
+        try:
+            await asyncio.wait_for(
+                self._db.command("ping"),
+                timeout=config.DB_HEALTHCHECK_TIMEOUT
+            )
+            return True
+        except asyncio.TimeoutError:
+            self.logger.error("❌ DATABASE HEALTH CHECK FAIL: Timed out")
+            return False
+        except Exception as ex:
+            self.logger.error(f"❌ DATABASE HEALTH CHECK FAIL: Unknown exception: {ex}")
+            return False
 
     async def init(self):
         # creating indexes
@@ -34,14 +57,11 @@ class Database:
             unique=True,
             name="idx_user_sesh_unique"
         )
-    
+
     @property
     def users(self):
         return self._db["users"]
-    
+
     @property
     def sessions(self):
         return self._db["sessions"]
-
-    def col(self, collection: str) -> AsyncIOMotorCollection:
-        return self._db[collection]

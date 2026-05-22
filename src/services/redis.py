@@ -1,20 +1,56 @@
 from redis.asyncio import Redis
 
-import os
+import asyncio
+import logging
+
+from typing import Awaitable
+
+import config
+
+from services import Service
 
 
-async def init_redis() -> Redis:
-    try:
-        redis = Redis.from_url(
-            os.getenv("REDIS_URL"),
+class RedisService(Service):
+    logger = logging.getLogger("services.db")
+
+    def __init__(
+        self,
+        url: str | None
+    ):
+        if url is None:
+            raise ValueError("RedisService does not accept NoneType arguments. Received: "
+                            f"{url=}")
+
+        self.redis = Redis.from_url(
+            url,
             decode_responses=True,
             socket_timeout=15.0,
             retry_on_timeout=True,
         )
 
-        if await redis.ping():
-            print(f"Redis started successfully")
-        return redis
-    except Exception as ex:
-        print(f"Redis startup failed: {ex}")
-        raise SystemExit(1)
+    async def is_healthy(self) -> bool:
+        try:
+            return await asyncio.wait_for(
+                self._healthcheck(),
+                timeout=config.REDIS_HEALTHCHECK_TIMEOUT
+            )
+        except asyncio.TimeoutError:
+            self.logger.error("❌ REDIS HEALTH CHECK FAIL: Timed out")
+        except Exception as ex:
+            self.logger.error(f"❌ SMTP REDIS CHECK FAIL: Unknown exception: {ex}")
+        return False
+
+    async def _healthcheck(self):
+        pong = self.redis.ping()  # bool | Awaitable[bool]
+
+        if isinstance(pong, Awaitable):
+            return await pong
+        elif isinstance(pong, bool):
+            return pong
+        else:
+            return False
+
+    async def init(self):
+        if not await self.is_healthy():
+            self.logger.error(f"❌ SMTP REDIS INIT FAIL")
+            raise SystemExit(1)

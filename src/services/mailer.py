@@ -3,8 +3,14 @@ import asyncio
 from enum import Enum
 from pathlib import Path
 
+import logging
+
 from aiosmtplib import SMTP, SMTPException, SMTPResponseException
 from email.message import EmailMessage
+
+import config
+
+from services import Service
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -20,7 +26,9 @@ class Templates(Enum):
         return path.read_text(encoding="utf-8")
 
 
-class Mailer:
+class Mailer(Service):
+    logger = logging.getLogger(f"services.mailer")
+
     def __init__(
         self,
         smtp_host: str | None,
@@ -47,7 +55,45 @@ class Mailer:
 
         for template in Templates:
             self.templates[template] = Templates.load_template(template.value)
+    
+    async def init(self):
+        if not await self.is_healthy():
+            self.logger.error(f"❌ SMTP INIT FAIL")
+            raise SystemExit(1)
+    
+    async def get_smtp(self) -> SMTP:
+        """Do not forget to close the returned resource"""
+        use_tls = self.smtp_port == 465
+        start_tls = self.smtp_port == 587 and not use_tls
 
+        return SMTP(
+            hostname=self.smtp_host,
+            port=self.smtp_port,
+            start_tls=start_tls,
+            use_tls=use_tls
+        )
+    
+    async def is_healthy(self) -> bool:
+        async with await self.get_smtp() as smtp:
+            try:
+                await asyncio.wait_for(
+                    smtp.noop(),
+                    timeout=config.SMTP_HEALTHCHECK_TIMEOUT
+                )
+                return True
+            except asyncio.TimeoutError:
+                self.logger.error("❌ SMTP HEALTH CHECK FAIL: Timed out")
+                return False
+            except Exception as ex:
+                self.logger.error(f"❌ SMTP HEALTH CHECK FAIL: Unknown exception: {ex}")
+                return False
+            finally:
+                # just in case
+                if smtp and smtp.is_connected:
+                    try:
+                        await smtp.quit()
+                    except:
+                        pass
 
     async def send_email(self, to: str, sub: str, body: str, html: str | None = None):
         msg = EmailMessage()
@@ -59,15 +105,7 @@ class Mailer:
         if html is not None:
             msg.add_alternative(html, subtype="html")
 
-        use_tls = self.smtp_port == 465
-        start_tls = self.smtp_port == 587 and not use_tls
-
-        async with SMTP(
-            hostname=self.smtp_host,
-            port=self.smtp_port,
-            start_tls=start_tls,
-            use_tls=use_tls
-        ) as smtp:
+        async with await self.get_smtp() as smtp:
             await smtp.login(self.smtp_user, self.smtp_pass)
             await smtp.send_message(msg)
 
