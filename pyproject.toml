@@ -8,6 +8,7 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "fastapi[standard]>=0.136.1",
+    "fastapi-limiter>=0.2.0",
     "jwt>=1.4.0",
     "argon2-cffi>=25.1.0",
     "python-dotenv>=1.2.2",

@@ -4,7 +4,7 @@ import time
 
 from typing import Dict, List, Tuple, Union
 
-import config
+from settings import config
 
 from services import Service
 
@@ -31,7 +31,7 @@ class ServiceHandler:
         self._pause_event = asyncio.Event()
 
         self._pause_event.set()
-    
+
     async def init_services(self):
         if not self.services:
             return
@@ -58,7 +58,7 @@ class ServiceHandler:
         async with self._lock:
             if service not in self.services:
                 return False
-            
+
             self.services.remove(service)
             self.statuses.pop(service, None)
             self.logger.info(f"♻️ Unregistered service {service}")
@@ -83,7 +83,8 @@ class ServiceHandler:
 
         for service, result in zip(services_snapshot, results):
             if isinstance(result, Exception):
-                self.logger.error(f"❌ Exception caught in healthcheck for {service=}: {result}")
+                self.logger.error(f"❌ Exception caught in healthcheck for {service=}: "
+                                  f"{result} | {result.__class__.__name__}")
                 new_statuses[service] = (current, False)
             elif isinstance(result, bool):  # aka "else" but for typecheckers
                 new_statuses[service] = (current, result)
@@ -91,7 +92,7 @@ class ServiceHandler:
                 self.logger.warning(f"⚠️ Unexpected healthcheck result for {service=}: "
                                     f"{result} ({type(result)=})")
                 new_statuses[service] = (current, False)
-        
+
         async with self._lock:
             self.statuses = new_statuses
 
@@ -102,7 +103,7 @@ class ServiceHandler:
                 self.logger.warning(f"⚠️ Stale health data for {service}")
                 return False
             return healthy
-    
+
     async def start(self):
         if self._check_task and not self._check_task.done():
             self.logger.warning("⚠️ Healthcheck task already running")
@@ -112,9 +113,9 @@ class ServiceHandler:
         self._pause_event.set()  # unpause
 
         self._check_task = asyncio.create_task(self._checker(), name="healthcheck-loop")
-        
+
         self.logger.info("▶️ Started healthcheck task")
-    
+
     async def stop(self):
         if not self._check_task or self._check_task.done():
             self.logger.warning("⚠️ Cannot stop a task that is not running (healthcheck task)")
@@ -130,15 +131,15 @@ class ServiceHandler:
         finally:
             self._check_task = None
             self.logger.info("🛑 Stopped healthcheck task")
-    
+
     async def pause(self):
         self._pause_event.clear()
         self.logger.info("⏸️ Healthcheck task paused")
-    
+
     async def resume(self):
         self._pause_event.set()
         self.logger.info("⏯️ Healthcheck task resumed")
-    
+
     async def _checker(self):
         try:
             while not self._shutdown_event.is_set():
@@ -154,7 +155,7 @@ class ServiceHandler:
                     break
 
                 await self.force_recheck()
-                
+
                 try:
                     await asyncio.wait_for(
                         self._shutdown_event.wait(),

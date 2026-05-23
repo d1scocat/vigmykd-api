@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from routes.v1.auth import diagnostic, login, logout
 
 

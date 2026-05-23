@@ -1,36 +1,48 @@
+import logging
 import os
+import time
 
-from fastapi import FastAPI
+from argon2 import PasswordHasher
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
 
-import config  # loads dotenv also
+from settings import config  # loads dotenv also
 
-from services import db, redis, mailer, ServiceHandler
+from log import setup as setup_log
 from routes.router import v1_router
+from services import db, redis, mailer, ServiceHandler
+from utils import err
+
+
+logger = logging.getLogger("core")
 
 
 @asynccontextmanager
 async def lifespan(api: FastAPI):
+    start = time.monotonic()
+
+    setup_log.setup()
+
     redis_service = redis.RedisService(
-        url=os.getenv("REDIS_URL")
+        url=config.REDIS_URL,
     )
 
     mailer_service = mailer.Mailer(
-        smtp_host=os.getenv("SMTP_HOST"),
-        smtp_port=os.getenv("SMTP_PORT"),
-        smtp_user=os.getenv("SMTP_USER"),
-        smtp_pass=os.getenv("SMTP_PASS")
+        smtp_host=config.SMTP_HOST,
+        smtp_port=config.SMTP_PORT,
+        smtp_user=config.SMTP_USER,
+        smtp_pass=config.SMTP_PASS,
     )
 
     db_service = db.Database(
-        url=os.getenv("DB_URL"),
-        db_name=os.getenv("DB_NAME")
+        url=config.DB_URL,
+        db_name=config.DB_NAME,
     )
 
     service_handler = ServiceHandler(config.HEALTHCHECK, [
-        redis_service, 
+        redis_service,
         mailer_service,
         db_service
     ])
@@ -41,11 +53,22 @@ async def lifespan(api: FastAPI):
     api.state.redis = redis_service
     api.state.mailer = mailer_service
     api.state.db = db_service
+
     api.state.service_handler = service_handler
+
+    api.state.argon = PasswordHasher(
+        time_cost=config.ARGON_TIME_COST,
+        memory_cost=config.ARGON_MEMORY_COST,
+        parallelism=config.ARGON_PARALLELISM,
+        hash_len=config.ARGON_HASH_LENGTH
+    )
+
+    elapsed = time.monotonic() - start
+    logger.info(f"⏱️ vigmykd REST API successfully started in {elapsed}s\n")
 
     yield
 
-    db_service._client.close()
+    db_service.shutdown()
 
 
 def make_app() -> FastAPI:
@@ -56,9 +79,12 @@ def make_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=[
+            "https://vigmykd.runderscore.com"
+        ],
         allow_methods=["*"],
         allow_headers=["*"],
+        allow_credentials=True,
     )
 
     app.include_router(v1_router)
@@ -67,6 +93,17 @@ def make_app() -> FastAPI:
 
 
 app = make_app()
+
+
+@app.middleware("http")
+async def handle_exceptions(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except HTTPException as ex:
+        return err(status_code=ex.status_code, msg=ex.detail)
+    except Exception as ex:
+        logger.error(f"❌ Uncaught exception: {ex}", exc_info=True)
+        return err(status_code=500, msg=f"{ex}")
 
 # Launch with:
 # uvicorn entrypoint:app --workers <amount of workers>

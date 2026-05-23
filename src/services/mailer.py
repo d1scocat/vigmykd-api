@@ -8,7 +8,7 @@ import logging
 from aiosmtplib import SMTP, SMTPException, SMTPResponseException
 from email.message import EmailMessage
 
-import config
+from settings import config
 
 from services import Service
 
@@ -27,7 +27,7 @@ class Templates(Enum):
 
 
 class Mailer(Service):
-    logger = logging.getLogger(f"services.mailer")
+    logger = logging.getLogger("services.mailer")
 
     def __init__(
         self,
@@ -37,11 +37,11 @@ class Mailer(Service):
         smtp_pass: str | None,
     ):
         if smtp_host is None or \
-            smtp_port is None or \
-            smtp_user is None or \
-            smtp_pass is None:
+                smtp_port is None or \
+                smtp_user is None or \
+                smtp_pass is None:
             raise ValueError("Mailer does not accept NoneType arguments. Received: "
-                            f"{smtp_host=} | {smtp_port=} | {smtp_user=} | {smtp_pass=}")
+                             f"{smtp_host=} | {smtp_port=} | {smtp_user=} | {smtp_pass=}")
 
         if not smtp_port.isnumeric():
             raise ValueError(f"smtp_port must be numeric: {smtp_port}")
@@ -55,12 +55,12 @@ class Mailer(Service):
 
         for template in Templates:
             self.templates[template] = Templates.load_template(template.value)
-    
+
     async def init(self):
         if not await self.is_healthy():
-            self.logger.error(f"❌ SMTP INIT FAIL")
+            self.logger.error("❌ SMTP INIT FAIL")
             raise SystemExit(1)
-    
+
     async def get_smtp(self) -> SMTP:
         """Do not forget to close the returned resource"""
         use_tls = self.smtp_port == 465
@@ -72,28 +72,27 @@ class Mailer(Service):
             start_tls=start_tls,
             use_tls=use_tls
         )
-    
+
     async def is_healthy(self) -> bool:
-        async with await self.get_smtp() as smtp:
-            try:
-                await asyncio.wait_for(
-                    smtp.noop(),
-                    timeout=config.SMTP_HEALTHCHECK_TIMEOUT
-                )
-                return True
-            except asyncio.TimeoutError:
-                self.logger.error("❌ SMTP HEALTH CHECK FAIL: Timed out")
-                return False
-            except Exception as ex:
-                self.logger.error(f"❌ SMTP HEALTH CHECK FAIL: Unknown exception: {ex}")
-                return False
-            finally:
-                # just in case
-                if smtp and smtp.is_connected:
-                    try:
-                        await smtp.quit()
-                    except:
-                        pass
+        smtp: SMTP | None = None
+        try:
+            smtp = await self.get_smtp()
+            return True
+        except asyncio.TimeoutError:
+            self.logger.error("❌ SMTP HEALTH CHECK FAIL: Timed out")
+            return False
+        except Exception:
+            # self.logger.error(f"❌ SMTP HEALTH CHECK FAIL: Unknown exception: {ex}")
+            # return False
+            # instead delegate it to the service handler
+            raise
+        finally:
+            # just in case
+            if smtp and smtp.is_connected:
+                try:
+                    await smtp.quit()
+                except Exception:
+                    pass
 
     async def send_email(self, to: str, sub: str, body: str, html: str | None = None):
         msg = EmailMessage()
@@ -109,8 +108,8 @@ class Mailer(Service):
             await smtp.login(self.smtp_user, self.smtp_pass)
             await smtp.send_message(msg)
 
-            print(f"Send email to {to} (subject: {sub})")
-    
+            self.logger.info(f"📨 Sent email to {to} (subject: {sub})")
+
     async def send_email_retries(
         self,
         to: str,
@@ -128,7 +127,8 @@ class Mailer(Service):
                 return
             except (SMTPException, SMTPResponseException) as ex:
                 delay = 2 * attempt
-                print(f"Attempt {attempt + 1} failed: {ex}. Retrying in {delay} seconds...")
+                self.logger.warning(f"⚠️ SMTP: Attempt {attempt + 1} failed: {ex}."
+                                    f" Retrying in {delay} seconds...")
                 await asyncio.sleep(delay)
         raise RuntimeError(f"Failed to send email after {max_attempts} retries")
 
@@ -148,5 +148,5 @@ class PreaggregatedMailer:
                 max_attempts=3
             )
             return True
-        except RuntimeError as ex:
+        except RuntimeError:
             return False

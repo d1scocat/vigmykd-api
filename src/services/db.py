@@ -1,10 +1,10 @@
 import asyncio
 import logging
 
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo import ASCENDING, TEXT
 
-import config
+from settings import config
 
 from services import Service
 
@@ -19,7 +19,7 @@ class Database(Service):
     ):
         if url is None or db_name is None:
             raise ValueError("Database does not accept NoneType arguments. Received: "
-                            f"{url=} | {db_name=}")
+                             f"{url=} | {db_name=}")
 
         self._client = AsyncIOMotorClient(
             url,
@@ -29,7 +29,7 @@ class Database(Service):
         )
 
         self._db = self._client[db_name]
-    
+
     async def is_healthy(self) -> bool:
         try:
             await asyncio.wait_for(
@@ -40,9 +40,11 @@ class Database(Service):
         except asyncio.TimeoutError:
             self.logger.error("❌ DATABASE HEALTH CHECK FAIL: Timed out")
             return False
-        except Exception as ex:
-            self.logger.error(f"❌ DATABASE HEALTH CHECK FAIL: Unknown exception: {ex}")
-            return False
+        except Exception:
+            # self.logger.error(f"❌ DATABASE HEALTH CHECK FAIL: Unknown exception: {ex}")
+            # return False
+            # delegate to service_handler
+            raise
 
     async def init(self):
         # creating indexes
@@ -57,6 +59,9 @@ class Database(Service):
             unique=True,
             name="idx_user_sesh_unique"
         )
+    
+    def shutdown(self):
+        self._client.close()
 
     @property
     def users(self):

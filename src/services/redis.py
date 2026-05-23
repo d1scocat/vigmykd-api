@@ -5,7 +5,7 @@ import logging
 
 from typing import Awaitable
 
-import config
+from settings import config
 
 from services import Service
 
@@ -19,7 +19,7 @@ class RedisService(Service):
     ):
         if url is None:
             raise ValueError("RedisService does not accept NoneType arguments. Received: "
-                            f"{url=}")
+                             f"{url=}")
 
         self.redis = Redis.from_url(
             url,
@@ -36,8 +36,10 @@ class RedisService(Service):
             )
         except asyncio.TimeoutError:
             self.logger.error("❌ REDIS HEALTH CHECK FAIL: Timed out")
-        except Exception as ex:
-            self.logger.error(f"❌ SMTP REDIS CHECK FAIL: Unknown exception: {ex}")
+        except Exception:
+            # self.logger.error(f"❌ SMTP REDIS CHECK FAIL: Unknown exception: {ex}")
+            # delegate to service_handler
+            raise
         return False
 
     async def _healthcheck(self):
@@ -52,5 +54,5 @@ class RedisService(Service):
 
     async def init(self):
         if not await self.is_healthy():
-            self.logger.error(f"❌ SMTP REDIS INIT FAIL")
+            self.logger.error("❌ SMTP REDIS INIT FAIL")
             raise SystemExit(1)
