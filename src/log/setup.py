@@ -1,16 +1,19 @@
 import logging.config
+import sys
 
 
 config = {
     'version': 1,
+    'disable_existing_loggers': False,
     'formatters': {
         'detailed': {
-            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            'format': '%(asctime)s - %(name)s | [%(levelname)s] %(message)s'
         }
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
             'level': 'INFO',
             'formatter': 'detailed'
         },
@@ -18,14 +21,19 @@ config = {
             'class': 'logging.FileHandler',
             'filename': 'app.log',
             'level': 'DEBUG',
-            'formatter': 'detailed'
+            'formatter': 'detailed',
+            'encoding': 'utf-8'
         }
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO'
     },
     'loggers': {
         'vigmykd': {
             'handlers': ['console', 'file'],
             'level': 'DEBUG',
-            'propagate': True
+            'propagate': False
         }
     }
 }

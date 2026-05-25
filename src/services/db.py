@@ -21,14 +21,14 @@ class Database(Service):
             raise ValueError("Database does not accept NoneType arguments. Received: "
                              f"{url=} | {db_name=}")
 
-        self._client = AsyncIOMotorClient(
+        self.client = AsyncIOMotorClient(
             url,
             maxPoolSize=20,
             minPoolSize=5,
             serverSelectionTimeoutMS=10000
         )
 
-        self._db = self._client[db_name]
+        self._db = self.client[db_name]
 
     async def is_healthy(self) -> bool:
         try:
@@ -59,13 +59,21 @@ class Database(Service):
             unique=True,
             name="idx_user_sesh_unique"
         )
-    
+        await sesh_col.create_index("exp", expireAfterSeconds=0, name="idx_sessions_ttl")
+
+        del_col = self.deleted
+        await del_col.create_index("exp", expireAfterSeconds=0, name="idx_deleted_ttl")
+
     def shutdown(self):
-        self._client.close()
+        self.client.close()
 
     @property
     def users(self):
         return self._db["users"]
+
+    @property
+    def deleted(self):
+        return self._db["deleted"]
 
     @property
     def sessions(self):

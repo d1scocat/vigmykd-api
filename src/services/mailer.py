@@ -8,8 +8,6 @@ import logging
 from aiosmtplib import SMTP, SMTPException, SMTPResponseException
 from email.message import EmailMessage
 
-from settings import config
-
 from services import Service
 
 
@@ -19,6 +17,7 @@ TEMPLATES_DIR = BASE_DIR / "resources" / "emails"
 
 class Templates(Enum):
     REG_CONFIRM = "reg_confirm.html"
+    DEL_CONFIRM = "del_confirm.html"
 
     @staticmethod
     def load_template(filename: str) -> str:
@@ -143,6 +142,23 @@ class PreaggregatedMailer:
             await mailer.send_email_retries(
                 to=receiver,
                 sub="Confirm your account",
+                body="",
+                html=html,
+                max_attempts=3
+            )
+            return True
+        except RuntimeError:
+            return False
+
+    @staticmethod
+    async def send_del_confirmation(mailer: Mailer, receiver: str, code: str) -> bool:
+        html = mailer.templates[Templates.DEL_CONFIRM]
+        html = html.replace("{{CONFIRMATION_CODE}}", code)
+
+        try:
+            await mailer.send_email_retries(
+                to=receiver,
+                sub="Confirm account deletion",
                 body="",
                 html=html,
                 max_attempts=3

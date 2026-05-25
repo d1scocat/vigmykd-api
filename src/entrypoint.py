@@ -1,74 +1,44 @@
 import logging
-import os
 import time
-
-from argon2 import PasswordHasher
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
 
-from settings import config  # loads dotenv also
+from fastapi import FastAPI, HTTPException, Response, Request
+from fastapi.middleware.cors import CORSMiddleware
 
 from log import setup as setup_log
 from routes.router import v1_router
-from services import db, redis, mailer, ServiceHandler
+from start import DependencyManager, TaskManager
 from utils import err
 
 
-logger = logging.getLogger("core")
+logger = logging.getLogger("vigmykd")
 
 
 @asynccontextmanager
-async def lifespan(api: FastAPI):
+async def lifespan(app: FastAPI):
     start = time.monotonic()
 
     setup_log.setup()
 
-    redis_service = redis.RedisService(
-        url=config.REDIS_URL,
-    )
+    dependencies = DependencyManager(app)
+    tasks = TaskManager(dependencies)
 
-    mailer_service = mailer.Mailer(
-        smtp_host=config.SMTP_HOST,
-        smtp_port=config.SMTP_PORT,
-        smtp_user=config.SMTP_USER,
-        smtp_pass=config.SMTP_PASS,
-    )
-
-    db_service = db.Database(
-        url=config.DB_URL,
-        db_name=config.DB_NAME,
-    )
-
-    service_handler = ServiceHandler(config.HEALTHCHECK, [
-        redis_service,
-        mailer_service,
-        db_service
-    ])
-
-    await service_handler.init_services()
-    await service_handler.start()
-
-    api.state.redis = redis_service
-    api.state.mailer = mailer_service
-    api.state.db = db_service
-
-    api.state.service_handler = service_handler
-
-    api.state.argon = PasswordHasher(
-        time_cost=config.ARGON_TIME_COST,
-        memory_cost=config.ARGON_MEMORY_COST,
-        parallelism=config.ARGON_PARALLELISM,
-        hash_len=config.ARGON_HASH_LENGTH
-    )
+    await dependencies.init()
+    await tasks.init(start=True)
 
     elapsed = time.monotonic() - start
-    logger.info(f"⏱️ vigmykd REST API successfully started in {elapsed}s\n")
+    logger.info(f"⏱️ vigmykd REST API successfully started in {elapsed:.4f}s\n")
 
     yield
 
-    db_service.shutdown()
+    halt_start = time.monotonic()
+
+    await dependencies.cleanup()
+    await tasks.cleanup()
+
+    halt_elapsed = time.monotonic() - halt_start
+    logger.info(f"⏱️ vigmykd REST API successfully stopped in {halt_elapsed:.4f}s")
 
 
 def make_app() -> FastAPI:

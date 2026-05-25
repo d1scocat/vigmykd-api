@@ -1,5 +1,6 @@
 from argon2 import PasswordHasher
 from fastapi import HTTPException, Request
+from jwt import JWT
 from redis.asyncio import Redis
 
 from services.db import Database
@@ -43,3 +44,7 @@ def get_service_handler(request: Request) -> ServiceHandler:
 
 def get_argon(request: Request) -> PasswordHasher:
     return request.app.state.argon
+
+
+def get_jwt(request: Request) -> JWT:
+    return request.app.state.jwt
