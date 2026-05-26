@@ -23,13 +23,13 @@ FROM python:3.11-slim-bookworm as runtime
 WORKDIR /app
 
 RUN useradd --create-home --shell /bin/bash appuser
-USER appuser
 
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser keys/ ./keys/
+
+USER appuser
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
 

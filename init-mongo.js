@@ -1,6 +1,6 @@
-const dbName = process.env.MONGO_INITDB_DATABASE || "vigmykd";
-const appUser = process.env.MONGO_APP_USER || "vigmykd_app";
-const appPass = process.env.MONGO_APP_PASSWORD;
+const dbName = "vigmykd";
+const appUser = "vigmykd_app";
+const appPass = "" // replace
 
 if (appPass) {
   db = db.getSiblingDB(dbName);
