@@ -29,6 +29,7 @@ RUN useradd --create-home --shell /bin/bash appuser
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --chown=appuser:appuser resources/ /app/resources/
 COPY --chown=appuser:appuser . /app/
 COPY --chown=appuser:appuser keys/ ./keys/
 
