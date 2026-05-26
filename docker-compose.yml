@@ -54,7 +54,7 @@ services:
     container_name: vigmykd
     restart: unless-stopped
     command: >
-      uvicorn src.entrypoint:app
+      uvicorn vigmykd.entrypoint:app
       --host 0.0.0.0
       --port ${API_PORT:-8000}
       --workers ${API_WORKERS:-8}
