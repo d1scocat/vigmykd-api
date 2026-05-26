@@ -37,4 +37,4 @@ USER appuser
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
 
 # Default command will be overwritten by docker compose
-CMD ["uvicorn", "src.entrypoint:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "vigmykd.entrypoint:app", "--host", "0.0.0.0", "--port", "8000"]
