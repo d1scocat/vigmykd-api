@@ -11,7 +11,7 @@ from email.message import EmailMessage
 from vigmykd.services import Service
 
 
-TEMPLATES_DIR = Path("/app/resources")
+TEMPLATES_DIR = Path("/app/resources/emails")
 
 
 class Templates(Enum):
