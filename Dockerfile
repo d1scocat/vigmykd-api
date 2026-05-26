@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --upgrade pip uv
 
 COPY pyproject.toml ./
+COPY src/ ./src/
+# ??? :sob:
+COPY LICENSE ./LICENSE
 
 ENV UV_SYSTEM_PYTHON=1
 RUN uv pip install --system ".[dev]"
@@ -26,6 +29,7 @@ RUN useradd --create-home --shell /bin/bash appuser
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+# COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser keys/ ./keys/
 
 USER appuser
