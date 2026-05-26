@@ -60,12 +60,15 @@ services:
       --workers ${API_WORKERS:-8}
       --proxy-headers
       --forwarded-allow-ips "*"
+    ports:
+      - "0.0.0.0:8060:8000"
     env_file:
       - ".env"
     volumes:
       - ./keys:/app/keys:ro
     networks:
       - vigmykd-internal
+      - vigmykd-external
     depends_on:
       mongodb:
         condition: service_healthy
@@ -76,6 +79,9 @@ networks:
   vigmykd-internal:
     driver: bridge
     internal: true
+  vigmykd-external:
+    driver: bridge
+    internal: false
 
 volumes:
   mongodb_data:
