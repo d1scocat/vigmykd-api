@@ -32,7 +32,7 @@ services:
       --maxmemory 1024mb
       --maxmemory-policy allkeys-lru
     volumes:
-      - redis-data:/data
+      - redis_data:/data
     networks:
       - vigmykd-internal
     ports:
