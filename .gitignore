@@ -9,7 +9,7 @@ VENV/
 
 keys/
 
-init-mongo.js
+./init-mongo.js
 
 __pycache__/
 *.py[cod]
