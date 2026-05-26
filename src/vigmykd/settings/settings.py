@@ -8,7 +8,7 @@ dotenv.load_dotenv()
 
 class _Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # env_file=".env", do not do that and let it load from os.environ (for docker)
         env_file_encoding="utf-8",
         extra="forbid",
         case_sensitive=True,
