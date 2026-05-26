@@ -1,0 +1,84 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: vigmykd-mongodb
+    restart: unless-stopped
+    command: [--auth]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Required}
+      MONGO_INITDB_DATABASE: ${DB_NAME:-vigmykd}
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - vigmykd-internal
+    ports:
+      - "${MONGO_HOST_PORT:-27018}:27017"
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: vigmykd-redis
+    restart: unless-stopped
+    command: >
+      --requirepass ${REDIS_PASSWORD:?Required}
+      --appendonly yes
+      --maxmemory 1024mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - vigmykd-internal
+    ports:
+      - "${REDIS_HOST_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      environment:
+        - REDISCLI_AUTH=${REDIS_PASSWORD}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: vigmykd
+    restart: unless-stopped
+    command: >
+      uvicorn src.entrypoint:app
+      --host 0.0.0.0
+      --port ${API_PORT:-8000}
+      --workers ${API_WORKERS:-8}
+      --proxy-headers
+      --forwarded-allow-ips "*"
+    env_file:
+      - ".env"
+    volumes:
+      - ./keys:/app/keys:ro
+    networks:
+      - vigmykd-internal
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+networks:
+  vigmykd-internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
