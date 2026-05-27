@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from fastapi.concurrency import run_in_threadpool
 from jwt import JWT
 from jwt.utils import get_int_from_datetime
@@ -45,7 +46,12 @@ async def login(
         return err(status_code=401, msg="Invalid credentials")
 
     pw_hash = sought["pwhash"]
-    if not await run_in_threadpool(argon.verify, pw_hash, query.password):
+    try:
+        # wtf was i thinking
+        if not await run_in_threadpool(argon.verify, pw_hash, query.password):
+            logger.warning(f"❌ AUTHATT {log_id} failed: invalid credentials")
+            return err(status_code=401, msg="Invalid credentials")
+    except VerifyMismatchError:
         logger.warning(f"❌ AUTHATT {log_id} failed: invalid credentials")
         return err(status_code=401, msg="Invalid credentials")
 
