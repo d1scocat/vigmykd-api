@@ -21,7 +21,7 @@ RUN touch src/vigmykd/generated/__init__.py
 RUN touch src/vigmykd/generated/v1/__init__.py
 RUN protoc \
     -I=./proto \
-    --python_out=./src/vigmykd/generatedc \
+    --python_out=./src/vigmykd/generated \
     proto/v1/packet.proto
 
 COPY src/ ./src/
