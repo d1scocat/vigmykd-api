@@ -26,7 +26,6 @@ class DependencyManager(Starter):
         self.app = app
 
     async def init(self):
-        self.udp = UDPClient()
         self.redis_service = redis.RedisService(
             url=config.REDIS_URL,
         )
@@ -66,6 +65,7 @@ class DependencyManager(Starter):
         )
 
         self.app.state.jwt = JWT()
+        self.app.state.udp = UDPClient()
 
     async def cleanup(self):
         self.db_service.shutdown()

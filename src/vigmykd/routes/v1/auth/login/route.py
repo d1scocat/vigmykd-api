@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post(
     "/login",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 180))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 180))))]
 )
 async def login(
     query: models.LoginQuery,

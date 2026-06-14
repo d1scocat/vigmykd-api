@@ -17,7 +17,7 @@ security = HTTPBearer()
 
 @router.patch(
     "/change-password",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 300))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 300))))]
 )
 async def change_password(
     query: models.ChangePasswordQuery,

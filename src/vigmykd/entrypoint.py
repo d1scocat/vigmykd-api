@@ -66,7 +66,6 @@ def make_app() -> FastAPI:
 
 app = make_app()
 
-
 @app.middleware("http")
 async def handle_exceptions(request: Request, call_next):
     try:
@@ -77,5 +76,3 @@ async def handle_exceptions(request: Request, call_next):
         logger.error(f"❌ Uncaught exception: {ex}", exc_info=True)
         return err(status_code=500, msg=f"{ex}")
 
-# Launch with:
-# uvicorn entrypoint:app --workers <amount of workers>

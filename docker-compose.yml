@@ -51,6 +51,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runtime
+    mem_limit: 2048m
     container_name: vigmykd
     restart: unless-stopped
     command: >

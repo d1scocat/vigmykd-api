@@ -15,7 +15,7 @@ security = HTTPBearer(auto_error=False)
 
 @router.get(
     "/validate-token",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))]
 )
 async def validate_token(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),

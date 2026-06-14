@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.post(
     "/register",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 300))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 300))))]
 )
 async def register(
     query: models.RegisterQuery,
@@ -36,7 +36,7 @@ async def register(
 
 @router.post(
     "/register/confirm",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))]
 )
 async def confirm(
     request: Request,

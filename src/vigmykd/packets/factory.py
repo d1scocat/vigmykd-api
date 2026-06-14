@@ -8,12 +8,12 @@ from vigmykd.settings import config
 
 
 class Packets:
-    _id = 10_000_000_000
+    _id = 1_000_000_000
 
     @staticmethod
     def get_next_id() -> int:
         # By my own convention, the server gets message IDs in the range
-        # (10'000'000'000-20'000'000'000]. The client gets [1-10'000'000'000]
+        # (1'000'000'000-2'000'000'000]. The client gets [1-1'000'000'000]
         Packets._id += 1
         return Packets._id
 

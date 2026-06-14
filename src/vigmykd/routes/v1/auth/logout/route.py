@@ -16,7 +16,7 @@ security = HTTPBearer()
 
 @router.post(
     "/logout",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(10, Duration.SECOND * 60))))]
 )
 async def logout(
     credentials: HTTPAuthorizationCredentials = Depends(security),

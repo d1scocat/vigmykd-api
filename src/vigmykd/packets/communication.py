@@ -50,7 +50,13 @@ class UDPClient:
         sock.close()
         raise RuntimeError(f"No free port for socket in range [{start_port}; {max_port}]")
 
-    def enqueue(self, value: bytes | HasSerializeToString, needs_ack: bool = False, callback=None):
+    def enqueue(
+        self,
+        value: bytes | HasSerializeToString,
+        msg_id: int,
+        needs_ack: bool = False,
+        callback=None
+    ):
         # Whatever we receive!
         if isinstance(value, bytes):
             data = value
@@ -62,7 +68,7 @@ class UDPClient:
 
         self._push_drop_oldest(self.outgoing, data)
         if needs_ack and callback is not None:
-            self._waits_ack[data.msg_id] = callback
+            self._waits_ack[msg_id] = callback
 
     def pump(self):
         if not self.running:

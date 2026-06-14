@@ -63,20 +63,20 @@ async def start(
                        exc_info=True)
         return err(status_code=500, msg="Matchmaking service is down. Try again later")
 
-    packet = Packets.sign(Packets.register_match(
+    packet = Packets.register_match(
         match_id=match_id,
         players=[uid],
         match_key=match_key,
         join_token=join_token,
         expires=int((datetime.now(timezone.utc) + timedelta(hours=12)).timestamp())
-    ))
+    )
 
     future = asyncio.get_running_loop().create_future()
 
     def complete_future(is_ok: bool):
         if not future.done():
             future.set_result(is_ok)
-    udp.enqueue(Packets.envelope(packet), needs_ack=True, callback=complete_future)
+    udp.enqueue(Packets.envelope(Packets.sign(packet)), packet.msg_id, True, complete_future)
 
     try:
         is_ok = await asyncio.wait_for(future, timeout=3.0)

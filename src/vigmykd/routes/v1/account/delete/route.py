@@ -18,7 +18,7 @@ security = HTTPBearer()
 
 @router.delete(
     "/delete",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(3, Duration.SECOND * 60))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(3, Duration.SECOND * 60))))]
 )
 async def delete(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -39,7 +39,7 @@ async def delete(
 
 @router.post(
     "/delete/confirm",
-    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(3, Duration.SECOND * 60))))]
+#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(3, Duration.SECOND * 60))))]
 )
 async def confirm(
     request: Request,
