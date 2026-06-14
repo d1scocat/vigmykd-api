@@ -15,16 +15,14 @@ RUN pip install --upgrade pip uv
 
 COPY pyproject.toml ./
 COPY proto/ ./proto/
+COPY src/ ./src/
 
-RUN mkdir -p src/vigmykd/generated/v1
-RUN touch src/vigmykd/generated/__init__.py
-RUN touch src/vigmykd/generated/v1/__init__.py
 RUN protoc \
     -I=./proto \
-    --python_out=./src/vigmykd/generated \
+    --python_out=./generated \
     proto/v1/packet.proto
 
-COPY src/ ./src/
+COPY generated/ ./src/vigmykd/generated/
 
 ENV UV_SYSTEM_PYTHON=1
 RUN uv pip install --system ".[dev]"
