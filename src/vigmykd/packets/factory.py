@@ -3,7 +3,7 @@ import hashlib
 
 from typing import overload
 
-from vigmykd.generated.v1 import packet_pb2 as packet_pb2
+import vigmykd.generated.v1.packet_pb2 as packet_pb2
 from vigmykd.settings import config
 
 
