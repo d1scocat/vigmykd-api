@@ -17,12 +17,11 @@ COPY pyproject.toml ./
 COPY proto/ ./proto/
 COPY src/ ./src/
 
+RUN mkdir generated
 RUN protoc \
-    -I=./proto \
-    --python_out=./generated \
-    proto/v1/packet.proto
-
-COPY ./generated/ ./src/vigmykd/generated/
+    -I=/build/proto \
+    --python_out=/build/generated \
+    /build/proto/v1/packet.proto
 
 ENV UV_SYSTEM_PYTHON=1
 RUN uv pip install --system ".[dev]"
@@ -41,6 +40,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --chown=appuser:appuser resources/ /app/resources/
 COPY --chown=appuser:appuser . /app/
 COPY --chown=appuser:appuser keys/ ./keys/
+COPY --from=builder /build/generated /app/src/vigmykd/generated
 
 # writing logs
 RUN chown -R appuser:appuser /app
