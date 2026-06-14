@@ -19,7 +19,7 @@ __pycache__/
 
 *.pem
 
-generated/
+src/vigmykd/generated/proto/
 
 .Python
 build/
