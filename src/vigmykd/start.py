@@ -8,7 +8,7 @@ from vigmykd.settings import config  # loads dotenv also
 
 from vigmykd.packets.communication import UDPClient
 from vigmykd.services import db, mailer, redis, ServiceHandler
-from vigmykd.tasks import RedisSync
+from vigmykd.tasks import RedisSync, UDPPumper
 
 
 class Starter(ABC):
@@ -48,6 +48,9 @@ class DependencyManager(Starter):
             self.db_service
         ])
 
+        self.udp = UDPClient()
+        self.jwt = JWT()
+
         await self.service_handler.init_services()
         await self.service_handler.start()
 
@@ -64,8 +67,8 @@ class DependencyManager(Starter):
             hash_len=config.ARGON_HASH_LENGTH
         )
 
-        self.app.state.jwt = JWT()
-        self.app.state.udp = UDPClient()
+        self.app.state.jwt = self.jwt
+        self.app.state.udp = self.udp
 
     async def cleanup(self):
         self.db_service.shutdown()
@@ -81,11 +84,17 @@ class TaskManager(Starter):
             db_service=self.deps.db_service
         )
 
+        self.udp_pump = UDPPumper(
+            udp_client=self.deps.udp
+        )
+
         if start:
             await self.start()
 
     async def start(self):
         await self.redis_sync.start()
+        await self.udp_pump.start()
 
     async def cleanup(self):
         await self.redis_sync.stop()
+        await self.udp_pump.stop()

@@ -1,7 +1,7 @@
 import errno
 import logging
-import queue
 
+from collections import deque
 from socket import socket, AF_INET, SOCK_DGRAM
 from typing import Protocol, runtime_checkable
 
@@ -22,8 +22,8 @@ class UDPClient:
     def __init__(self):
         self._waits_ack = {}
 
-        self.incoming = queue.Queue(maxsize=2048)
-        self.outgoing = queue.Queue(maxsize=2048)
+        self.incoming = deque(maxlen=2048)
+        self.outgoing = deque()
 
         self.running = True
         self.sock = self._bind_socket()
@@ -66,7 +66,8 @@ class UDPClient:
             logger.warning(f"Cannot send bad packet: {value!r}")
             return
 
-        self._push_drop_oldest(self.outgoing, data)
+        self.outgoing.append(data)
+
         if needs_ack and callback is not None:
             self._waits_ack[msg_id] = callback
 
@@ -82,25 +83,26 @@ class UDPClient:
         self.sock.close()
 
     def _recv(self):
-        try:
-            packet, _ = self.sock.recvfrom(2048)
-            self._check_ack(packet)
-        except BlockingIOError:
-            return
-
-        self._push_drop_oldest(self.incoming, packet)
-
-    def _send(self):
         while True:
             try:
-                data = self.outgoing.get_nowait()
+                packet, _ = self.sock.recvfrom(2048)
+            except BlockingIOError:
+                break
+
+            self._check_ack(packet)
+            self.incoming.append(packet)
+
+    def _send(self):
+        while self.outgoing:
+            data = self.outgoing.popleft()
+
+            try:
                 self.sock.sendto(data, (config.UDP_ADDR, config.UDP_PORT))
             except BlockingIOError:
-                pass
+                self.outgoing.insert(0, data)
+                break
             except OSError:
                 logger.exception("Packet send failed")
-            except queue.Empty:
-                break
 
     def _check_ack(self, data):
         packet = packet_pb2.Packet()
@@ -116,13 +118,3 @@ class UDPClient:
         callback = self._waits_ack.pop(ack.acknowledged_msg_id, None)
         if callback is not None:
             callback(ack.ok)
-
-    def _push_drop_oldest(self, q: queue.Queue, item) -> None:
-        try:
-            q.put_nowait(item)
-        except queue.Full:
-            try:
-                q.get_nowait()
-                q.put_nowait(item)
-            except queue.Empty:
-                pass
