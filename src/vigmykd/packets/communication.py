@@ -89,7 +89,7 @@ class UDPClient:
     def _recv(self):
         while True:
             try:
-                packet, _ = self.sock.recvfrom(2048)
+                packet, addr = self.sock.recvfrom(2048)
             except BlockingIOError:
                 break
 
@@ -109,8 +109,12 @@ class UDPClient:
                 logger.exception("Packet send failed")
 
     def _check_ack(self, data):
-        packet = packet_pb2.Packet()
-        packet.ParseFromString(data)
+        envelope = packet_pb2.Envelope()
+        envelope.ParseFromString(data)
+        if envelope.WhichOneof("payload") != "packet":
+            return
+
+        packet = envelope.packet
         if packet.WhichOneof("payload") != "server_to_client":
             return
 
@@ -122,3 +126,4 @@ class UDPClient:
         callback = self._waits_ack.pop(ack.acknowledged_msg_id, None)
         if callback is not None:
             callback(ack.ok)
+

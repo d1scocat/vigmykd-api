@@ -59,7 +59,7 @@ async def start(
 
         logger.info(f"💨 MMSTART {log_id}: saved new match data to Redis")
     except Exception as ex:
-        logger.warning(f"⚠️ AUTHATT {log_id}: could not write match to Redis: {ex}",
+        logger.warning(f"⚠️ MMSTART {log_id}: could not write match to Redis: {ex}",
                        exc_info=True)
         return err(status_code=500, msg="Matchmaking service is down. Try again later")
 
@@ -76,6 +76,7 @@ async def start(
     def complete_future(is_ok: bool):
         if not future.done():
             future.set_result(is_ok)
+
     udp.enqueue(Packets.envelope(Packets.sign(packet)), packet.msg_id, True, complete_future)
 
     try:

@@ -24,7 +24,7 @@ class Packets:
 
     @staticmethod
     def set_replyto(packet: packet_pb2.Packet) -> packet_pb2.Packet:
-        packet.reply_back.reply_back = config.REPLY_TO
+        packet.reply_back.reply_host = config.REPLY_TO
         packet.reply_back.reply_port = Packets._port
         return packet
 
