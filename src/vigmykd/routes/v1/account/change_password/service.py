@@ -80,11 +80,12 @@ async def change_password(
         async for session in sessions_cur:
             this_id = session["session_id"]
             await db.sessions.delete_one({"session_id": this_id})
-    
+
             try:
                 await redis.delete(f"session:{this_id}")
             except Exception as ex:
-                logger.warning(f"⚠️ CHPWDATT {log_id}: Redis invalidation fail: {ex}", exc_info=True)
+                logger.warning(f"⚠️ CHPWDATT {log_id}: "
+                               f"Redis invalidation fail: {ex}", exc_info=True)
 
     logger.info(f"⬆️ CHPWDATT {log_id} succeeded: password changed")
     return Response(status_code=204)

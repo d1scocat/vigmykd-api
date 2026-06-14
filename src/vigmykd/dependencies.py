@@ -3,6 +3,7 @@ from fastapi import HTTPException, Request
 from jwt import JWT
 from redis.asyncio import Redis
 
+from vigmykd.packets.communication import UDPClient
 from vigmykd.services.db import Database
 from vigmykd.services.mailer import Mailer
 from vigmykd.services.redis import RedisService
@@ -48,3 +49,7 @@ def get_argon(request: Request) -> PasswordHasher:
 
 def get_jwt(request: Request) -> JWT:
     return request.app.state.jwt
+
+
+def get_udp(request: Request) -> UDPClient:
+    return request.app.state.udp

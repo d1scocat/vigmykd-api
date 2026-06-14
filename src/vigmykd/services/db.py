@@ -21,7 +21,7 @@ class Database(Service):
             raise ValueError("Database does not accept NoneType arguments. Received: "
                              f"{url=} | {db_name=}")
 
-        self.client = AsyncIOMotorClient(
+        self.client: AsyncIOMotorClient = AsyncIOMotorClient(
             url,
             maxPoolSize=20,
             minPoolSize=5,

@@ -45,6 +45,8 @@ def make_app() -> FastAPI:
     app = FastAPI(
         title="vigmykd REST API",
         lifespan=lifespan,
+        docs_url=None,
+        redoc_url=None
     )
 
     app.add_middleware(

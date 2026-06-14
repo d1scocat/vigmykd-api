@@ -40,7 +40,7 @@ async def jwt_validate_token(
             do_verify=True,
             do_time_check=False
         )
-    except (JWTDecodeError, JWSDecodeError) as ex:
+    except (JWTDecodeError, JWSDecodeError):
         return ValidationResult(is_valid=False, reason=ValidationResultType.MALFORMED)
 
     now = datetime.now(timezone.utc).timestamp()

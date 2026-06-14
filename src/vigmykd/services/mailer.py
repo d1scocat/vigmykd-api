@@ -11,7 +11,7 @@ from email.message import EmailMessage
 from vigmykd.services import Service
 
 
-RES_DIR = Path("/app/resources")
+RES_DIR = Path("resources")
 TEMPLATES_DIR = RES_DIR / "emails"
 
 

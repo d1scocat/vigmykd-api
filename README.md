@@ -15,3 +15,11 @@ openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:204
 # extract the corresponding public key
 openssl rsa -pubout -in private_key.pem -out public_key.pem
 ```
+
+# proto compilation
+compile .proto files like this (example):
+```bash
+pwd
+> ~/vigmykd-api
+protoc --python_out=.\src\vigmykd\generated\. .\proto\v1\packet.proto
+```

@@ -33,7 +33,7 @@ async def logout(
     session_id = parsed_jwt["jti"]  # guaranteed to exist at this point
 
     await db.sessions.delete_one({"session_id": session_id})
-    
+
     try:
         await redis.delete(f"session:{session_id}")
     except Exception as ex:

@@ -8,11 +8,17 @@ dotenv.load_dotenv()
 
 class _Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # env_file=".env", do not do that and let it load from os.environ (for docker)
+        # env_file=".env",  do not do that and let it load from os.environ (for docker)
         env_file_encoding="utf-8",
         extra="forbid",
         case_sensitive=True,
     )
+
+    SIGNATURE: str = Field(...)
+
+    SOCKET_PORT: int = Field(...)
+    UDP_ADDR: str = Field(...)
+    UDP_PORT: int = Field(...)
 
     BASE_URL: str = Field(...)
 
@@ -55,6 +61,8 @@ class _Settings(BaseSettings):
     MONGO_SESSION_EXPIRY_SYNC_PERIOD: int = Field(...)
 
     DELETED_ACCOUNTS_TTL_DAYS: int = Field(...)
+
+    MATCH_KEY_LENGTH: int = Field(...)
 
 
 config = _Settings()

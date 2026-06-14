@@ -13,8 +13,8 @@ from jwt import JWT
 from jwt.utils import get_int_from_datetime
 from redis.asyncio import Redis
 
-from vigmykd.settings import config, keys
 from vigmykd.services.db import Database
+from vigmykd.settings import config, keys
 from vigmykd.routes.v1.auth.login import models
 from vigmykd.utils import err
 
@@ -95,6 +95,7 @@ async def login(
     except Exception as ex:
         logger.warning(f"⚠️ AUTHATT {log_id}: could not write session to Redis: {ex}",
                        exc_info=True)
+        return err(status_code=500, msg="Authentication service is down. Try again later")
 
     logger.info(f"✅ AUTHATT {log_id} successful, created new session {session_id}")
 

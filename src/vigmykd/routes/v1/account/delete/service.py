@@ -92,13 +92,13 @@ async def confirm(
 
         if fail_count == 1:
             c_logger.info(f"📊 DELCONFATT {log_id}: Failure count for {ip} = "
-                        f"{fail_count}/{config.FAIL_COUNT_TO_CONFIRM_RATELIMIT}")
+                          f"{fail_count}/{config.FAIL_COUNT_TO_CONFIRM_RATELIMIT}")
             await redis.expire(fail_key, config.CONFIRM_RATELIMIT_SECONDS)
 
         if fail_count >= config.FAIL_COUNT_TO_CONFIRM_RATELIMIT:
             await redis.setex(lockout_key, config.CONFIRM_RATELIMIT_SECONDS, "1")
             c_logger.warning(f"🔒 DELCONFATT {log_id}: rate-locked {ip} "
-                         f"after {config.FAIL_COUNT_TO_CONFIRM_RATELIMIT} fails")
+                             f"after {config.FAIL_COUNT_TO_CONFIRM_RATELIMIT} fails")
             return err(429, "Too many requests, try again later")
 
         return err(status, msg)
@@ -118,7 +118,8 @@ async def confirm(
     try:
         res = json.loads(value)
     except json.JSONDecodeError:
-        c_logger.warning(f"❌ DELCONFATT {log_id} failed: Corrupted payload for {query.code=}: {value}")
+        c_logger.warning(f"❌ DELCONFATT {log_id} failed: "
+                         "Corrupted payload for {query.code=}: {value}")
         return await fail(500, "The code has been corrupted. "
                                "Please restart the registration process")
 

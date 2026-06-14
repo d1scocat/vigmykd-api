@@ -6,6 +6,7 @@ from jwt import JWT
 
 from vigmykd.settings import config  # loads dotenv also
 
+from vigmykd.packets.communication import UDPClient
 from vigmykd.services import db, mailer, redis, ServiceHandler
 from vigmykd.tasks import RedisSync
 
@@ -25,6 +26,7 @@ class DependencyManager(Starter):
         self.app = app
 
     async def init(self):
+        self.udp = UDPClient()
         self.redis_service = redis.RedisService(
             url=config.REDIS_URL,
         )
