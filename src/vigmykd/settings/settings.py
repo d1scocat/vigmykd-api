@@ -19,6 +19,7 @@ class _Settings(BaseSettings):
     SOCKET_PORT: int = Field(...)
     UDP_ADDR: str = Field(...)
     UDP_PORT: int = Field(...)
+    REPLY_TO: str = Field(...)
 
     BASE_URL: str = Field(...)
 

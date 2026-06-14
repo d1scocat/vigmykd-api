@@ -9,6 +9,11 @@ from vigmykd.settings import config
 
 class Packets:
     _id = 1_000_000_000
+    _port = config.SOCKET_PORT
+
+    @staticmethod
+    def call_once__set_port(port: int):
+        Packets._port = port
 
     @staticmethod
     def get_next_id() -> int:
@@ -16,6 +21,12 @@ class Packets:
         # (1'000'000'000-2'000'000'000]. The client gets [1-1'000'000'000]
         Packets._id += 1
         return Packets._id
+
+    @staticmethod
+    def set_replyto(packet: packet_pb2.Packet) -> packet_pb2.Packet:
+        packet.reply_back.reply_back = config.REPLY_TO
+        packet.reply_back.reply_port = Packets._port
+        return packet
 
     @staticmethod
     def sign(packet: packet_pb2.Packet) -> packet_pb2.SignedPacket:
@@ -54,7 +65,7 @@ class Packets:
 
         packet.icp.CopyFrom(icp)
 
-        return packet
+        return Packets.set_replyto(packet)
 
     @staticmethod
     @overload
