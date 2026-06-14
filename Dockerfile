@@ -7,18 +7,28 @@ WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
+    protobuf-compiler \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip uv
 
 COPY pyproject.toml ./
+COPY proto/ ./proto/
+
+RUN touch src/vigmykd/generated/__init__.py
+RUN touch src/vigmykd/generated/v1/__init__.py
+RUN protoc \
+    -I=./proto \
+    --python_out=./src/vigmykd/generatedc \
+    proto/v1/packet.proto
+
 COPY src/ ./src/
-# ??? :sob:
-COPY LICENSE ./LICENSE
 
 ENV UV_SYSTEM_PYTHON=1
 RUN uv pip install --system ".[dev]"
+
+COPY LICENSE ./LICENSE
 
 
 FROM python:3.11-slim-bookworm as runtime
