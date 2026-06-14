@@ -16,6 +16,7 @@ RUN pip install --upgrade pip uv
 COPY pyproject.toml ./
 COPY proto/ ./proto/
 
+RUN mkdir -p src/vigmykd/generated/v1
 RUN touch src/vigmykd/generated/__init__.py
 RUN touch src/vigmykd/generated/v1/__init__.py
 RUN protoc \
