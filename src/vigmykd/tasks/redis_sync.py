@@ -94,4 +94,5 @@ class RedisSync:
             )
 
         results = await pipe.execute()
-        self.logger.info(f"▶️ Redis-Mongo sync task completed successfully | {results=}")
+        self.logger.info(f"▶️ Redis-Mongo sync task completed successfully | "
+                         f"True: {sum(results)}, False: {len(results) - sum(results)}")

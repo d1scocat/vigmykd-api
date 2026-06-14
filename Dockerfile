@@ -48,6 +48,7 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
+ENV PYTHONPATH=/app/src
 
 # Default command will be overwritten by docker compose
 CMD ["uvicorn", "vigmykd.entrypoint:app", "--host", "0.0.0.0", "--port", "8000"]
