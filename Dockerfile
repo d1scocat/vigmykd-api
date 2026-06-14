@@ -22,7 +22,7 @@ RUN protoc \
     --python_out=./generated \
     proto/v1/packet.proto
 
-COPY generated/ ./src/vigmykd/generated/
+COPY ./generated/ ./src/vigmykd/generated/
 
 ENV UV_SYSTEM_PYTHON=1
 RUN uv pip install --system ".[dev]"
