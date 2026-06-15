@@ -11,6 +11,8 @@ from fastapi.responses import JSONResponse
 from jwt import JWT
 from redis.asyncio import Redis
 
+import vigmykd.generated.v1.packet_pb2 as packet_pb2
+
 from vigmykd.packets import Packets
 from vigmykd.packets.communication import UDPClient
 from vigmykd.settings import config
@@ -71,16 +73,26 @@ async def start(
         expires=int((datetime.now(timezone.utc) + timedelta(hours=12)).timestamp())
     )
 
-    future = asyncio.get_running_loop().create_future()
+    future_ack = asyncio.get_running_loop().create_future()
+    future_response = asyncio.get_running_loop().create_future()
 
-    def complete_future(is_ok: bool):
-        if not future.done():
-            future.set_result(is_ok)
+    def complete_ack(is_ok: bool):
+        if not future_ack.done():
+            future_ack.set_result(is_ok)
 
-    udp.enqueue(Packets.envelope(Packets.sign(packet)), packet.msg_id, True, complete_future)
+    def complete_response(response: packet_pb2.InternalCommunicationPacket.RegisterMatchResponse):
+        if not future_response.done():
+            if response.old_match_id == match_id:
+                future_response.set_result(response.joined_match_id)
+
+    udp.enqueue(Packets.envelope(Packets.sign(packet)), packet.msg_id, True, complete_ack)
+    udp.expect(packet_pb2.InternalCommunicationPacket.RegisterMatchResponse, complete_response)
 
     try:
-        is_ok = await asyncio.wait_for(future, timeout=3.0)
+        is_ok, mid = await asyncio.wait_for(
+            asyncio.gather(future_ack, future_response),
+            timeout=3.0
+        )
     except asyncio.TimeoutError:
         return err(status_code=504, msg="Matchmaking service is down. Try again later")
 
@@ -88,6 +100,6 @@ async def start(
         return err(status_code=500, msg="Could not create match. Try again later")
 
     return JSONResponse({
-        "match_id": match_id,
+        "match_id": mid,
         "join_token": join_token
     })

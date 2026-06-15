@@ -1,13 +1,15 @@
 import errno
 import logging
 
-from collections import deque
+from collections import defaultdict, deque
 from socket import socket, AF_INET, SOCK_DGRAM
-from typing import Protocol, runtime_checkable
+from typing import Callable, Protocol, runtime_checkable
 
 import vigmykd.generated.v1.packet_pb2 as packet_pb2
 from vigmykd.packets.factory import Packets
 from vigmykd.settings import config
+
+from google.protobuf.message import Message
 
 
 logger = logging.getLogger("socket")
@@ -22,6 +24,7 @@ class HasSerializeToString(Protocol):
 class UDPClient:
     def __init__(self):
         self._waits_ack = {}
+        self._expecting = defaultdict(list)
 
         self.incoming = deque(maxlen=2048)
         self.outgoing = deque()
@@ -53,6 +56,13 @@ class UDPClient:
 
         sock.close()
         raise RuntimeError(f"No free port for socket in range [{start_port}; {max_port}]")
+
+    def expect(
+        self,
+        type: type[Message],  # how do I typehint this?,
+        callback: Callable[[Message], None]  # and this
+    ):
+        self._expecting[type].append(callback)
 
     def enqueue(
         self,
@@ -89,11 +99,12 @@ class UDPClient:
     def _recv(self):
         while True:
             try:
-                packet, addr = self.sock.recvfrom(2048)
+                packet, _ = self.sock.recvfrom(2048)
             except BlockingIOError:
                 break
 
             self._check_ack(packet)
+            self._check_expecting(packet)
             self.incoming.append(packet)
 
     def _send(self):
@@ -108,7 +119,7 @@ class UDPClient:
             except OSError:
                 logger.exception("Packet send failed")
 
-    def _check_ack(self, data):
+    def _check_ack(self, data: bytes):
         envelope = packet_pb2.Envelope()
         envelope.ParseFromString(data)
         if envelope.WhichOneof("payload") != "packet":
@@ -126,4 +137,22 @@ class UDPClient:
         callback = self._waits_ack.pop(ack.acknowledged_msg_id, None)
         if callback is not None:
             callback(ack.ok)
+
+    def _check_expecting(self, data: bytes):
+        envelope = packet_pb2.Envelope()
+        envelope.ParseFromString(data)
+
+        inner = self._innermost_message(envelope)
+        msg_type = type(inner)
+        for callback in self._expecting.get(msg_type, []):
+            callback(inner)
+
+    def _innermost_message(self, message: Message):
+        while True:
+            oneof = message.WhichOneof("payload")
+
+            if oneof is None:
+                return message
+
+            message = getattr(message, oneof)
 
