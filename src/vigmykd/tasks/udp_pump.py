@@ -32,6 +32,6 @@ class UDPPumper:
             try:
                 self.udp_client.pump()
             except Exception as ex:
-                self.logger.warning(f"⚠️ Redis-Mongo sync task failed once: {ex}", exc_info=True)
+                self.logger.warning(f"⚠️ UDP pump loop failed once: {ex}", exc_info=True)
 
             await asyncio.sleep(1 / 60)

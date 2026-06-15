@@ -149,10 +149,11 @@ class UDPClient:
 
     def _innermost_message(self, message: Message):
         while True:
-            oneof = message.WhichOneof("payload")
-
-            if oneof is None:
+            try:
+                oneof = message.WhichOneof("payload")
+                if oneof is None:
+                    return message
+                message = getattr(message, oneof)
+            except ValueError:  # no 'payload'
                 return message
-
-            message = getattr(message, oneof)
 
