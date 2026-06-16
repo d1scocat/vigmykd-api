@@ -43,31 +43,15 @@ async def start(
         return parsed_jwt
 
     uid = parsed_jwt["uid"]
+    name = parsed_jwt["name"]
 
     match_id = str(uuid.uuid4())
     match_key = "".join(secrets.choice(alphabet) for _ in range(config.MATCH_KEY_LENGTH))
     join_token = secrets.token_urlsafe(config.MATCH_KEY_LENGTH)
 
-    # try:
-    #     await redis.set(
-    #         f"match:{match_id}",
-    #         json.dumps({"key": match_key, "players": [uid], "status": "wait"})
-    #     )
-
-    #     await redis.set(
-    #         f"player:{uid}",
-    #         json.dumps({"match": match_id})
-    #     )
-
-    #     logger.info(f"💨 MMSTART {log_id}: saved new match data to Redis")
-    # except Exception as ex:
-    #     logger.warning(f"⚠️ MMSTART {log_id}: could not write match to Redis: {ex}",
-    #                    exc_info=True)
-    #     return err(status_code=500, msg="Matchmaking service is down. Try again later")
-
     packet = Packets.register_match(
         match_id=match_id,
-        players=[uid],
+        players=[(uid, name)],
         match_key=match_key,
         join_token=join_token,
         expires=int((datetime.now(timezone.utc) + timedelta(hours=12)).timestamp())
