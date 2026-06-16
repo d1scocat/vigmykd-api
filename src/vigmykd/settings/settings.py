@@ -65,5 +65,8 @@ class _Settings(BaseSettings):
 
     MATCH_KEY_LENGTH: int = Field(...)
 
+    MAX_ACK_ATTEMPTS: int = Field(...)
+    REACK_INTERVAL: float = Field(...)
+
 
 config = _Settings()

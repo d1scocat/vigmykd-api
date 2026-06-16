@@ -30,8 +30,8 @@ class UDPPumper:
     async def _pump_loop(self):
         while not self._shutdown_event.is_set():
             try:
-                self.udp_client.pump()
+                await self.udp_client.pump()
             except Exception as ex:
-                self.logger.warning(f"⚠️ UDP pump loop failed once: {ex}", exc_info=True)
+                self.logger.exception("⚠️ UDP pump loop failed once")
 
             await asyncio.sleep(1 / 60)
