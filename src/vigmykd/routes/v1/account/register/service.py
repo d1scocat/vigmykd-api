@@ -200,6 +200,8 @@ async def confirm(
             "pwhash": res["pwhash"],
             "ip": ip,
             "uuid": str(uuid.uuid4()),
+            "elo": 1200,
+            "games_played": 0,
         })
     except DuplicateKeyError:
         c_logger.warning(f"❌ REGCONFATT {log_id} failed: {email=} or {nickname=} already taken")

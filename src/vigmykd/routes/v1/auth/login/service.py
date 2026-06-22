@@ -73,7 +73,9 @@ async def login(
         "name": sought["nickname"],
         "uid": sought["uuid"],
         "iat": get_int_from_datetime(now),
-        "exp": jwt_ext
+        "exp": jwt_ext,
+        "elo": sought["elo"],
+        "games_played": sought["games_played"]
     }
 
     try:
@@ -83,7 +85,7 @@ async def login(
         return err(status_code=500, msg="Authentication service is down. Try again later")
 
     await db.sessions.insert_one(sesh_doc)
-    sesh_doc.pop("_id", None)  # does insert_one modify it?.. for some reason i get errors
+    sesh_doc.pop("_id", None)
 
     try:
         await redis.setex(

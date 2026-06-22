@@ -15,8 +15,7 @@ security = HTTPBearer()
 
 
 @router.post(
-    "/start",
-#    dependencies=[Depends(RateLimiter(limiter=Limiter(Rate(20, Duration.SECOND * 60))))]
+    "/start"
 )
 async def start(
     credentials: HTTPAuthorizationCredentials = Depends(security),

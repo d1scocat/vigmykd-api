@@ -44,6 +44,8 @@ async def start(
 
     uid = parsed_jwt["uid"]
     name = parsed_jwt["name"]
+    elo = parsed_jwt["elo"]
+    games_played = parsed_jwt["games_played"]
 
     match_id = str(uuid.uuid4())
     match_key = "".join(secrets.choice(alphabet) for _ in range(config.MATCH_KEY_LENGTH))
@@ -51,7 +53,7 @@ async def start(
 
     packet = Packets.register_match(
         match_id=match_id,
-        players=[(uid, name)],
+        players=[(uid, name, elo, games_played)],
         match_key=match_key,
         join_token=join_token,
         expires=int((datetime.now(timezone.utc) + timedelta(hours=12)).timestamp())

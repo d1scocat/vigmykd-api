@@ -29,6 +29,17 @@ message PlayerMoveState {
     bool duck = 3;
     bool jump = 4;
     bool dash = 5;
+    bool brake_dash = 6;
+    bool reverse_dash = 7;
+    bool hang = 8;
+    bool parry = 9;
+    bool gravity_heavy = 10;
+    bool gravity_light = 11;
+    bool gravity_normal = 12;
+
+    bool punch = 13;
+    bool push = 14;
+    bool stomp = 15;
 }
 
 
@@ -41,16 +52,47 @@ message PlayerData {
     Position position = 3;
 }
 
-message PositionData {
+message ReconcileData {
     string uuid = 1;
     Facing facing = 2;
+
     float x = 3;
     float vel_x = 4;
     float y = 5;
     float vel_y = 6;
+
     bool is_grounded = 7;
     bool is_dashing = 8;
     bool is_ducking = 9;
+
+    int32 dash_timer = 10;
+    int32 coyote_timer = 11;
+    int32 jump_buffer_timer = 12;
+    bool last_jump_pressed = 13;
+    bool last_dash_pressed = 14;
+    int32 hang_timer = 15;
+    int32 invulnerable_timer = 16;
+    int32 heavy_gravity_timer = 17;
+    int32 light_gravity_timer = 18;
+    int32 stun_timer = 19;
+
+    int32 brake_dash = 20;
+    int32 reverse_dash = 21;
+    int32 hang = 22;
+    int32 parry = 23;
+    int32 heavy = 24;
+    int32 light = 25;
+    int32 normal = 26;
+    int32 push = 27;
+    int32 stomp = 28;
+    int32 punch = 29;
+
+    int32 combo_hits = 30;
+    int32 combo_timer = 31;
+    bool combo_broken = 32;
+
+    int32 mana = 33;
+    float health = 34;
 }
 
 message RequestMatchInfoResponse {
@@ -58,13 +100,23 @@ message RequestMatchInfoResponse {
     string your_id = 2;
     uint64 rng_seed = 3;
     uint32 initial_server_tick = 4;
+    string map_name = 5;
 }
 
 message Reconcile {
-    repeated PositionData players = 1;
+    repeated ReconcileData players = 1;
     uint32 server_tick = 2;
     uint32 last_client_tick = 3;
 }
+
+message KickedFromMatch {
+    string match_id = 1;
+    string player_id = 2;
+    string reason_i18n = 3;
+}
+
+message LostMatch {}
+message WonMatch {}
 
 
 
@@ -99,6 +151,9 @@ message ServerToClientPacket {
         InformMatchStart inform_match_start = 5;
         RequestMatchInfoResponse request_match_info_response = 6;
         Reconcile reconcile = 7;
+        KickedFromMatch kicked_from_match = 8;
+        LostMatch lost_match = 9;
+        WonMatch won_match = 10;
     }
 }
 
@@ -127,6 +182,11 @@ message InternalCommunicationPacket {
         uint64 expires = 5;
     }
 
+    message GameOver {
+        string won_id = 1;
+        string lost_id = 2;
+    }
+
     message RegisterMatchResponse {
         string joined_match_id = 1;
         string old_match_id = 2;
@@ -135,6 +195,7 @@ message InternalCommunicationPacket {
     oneof payload {
         RegisterMatch register_match = 1;
         RegisterMatchResponse register_match_response = 2;
+        GameOver game_over = 3;
     }
 }
 

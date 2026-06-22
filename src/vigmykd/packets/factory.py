@@ -36,7 +36,7 @@ class Packets:
     @staticmethod
     def register_match(
         match_id: str,
-        players: list[tuple[str, str]],
+        players: list[tuple[str, str, int, int]],
         match_key: str,
         join_token: str,
         expires: int,
@@ -54,10 +54,13 @@ class Packets:
         icp.register_match.match_id = match_id
 
         packet_players = []
-        for player_id, player_name in players:
+        for player_id, player_name, elo, games_played in players:
             data = packet_pb2.InternalCommunicationPacket.PlayerBrief()
             data.id = player_id
             data.name = player_name
+            data.elo = elo
+            data.games_played = games_played
+
             packet_players.append(data)
 
         icp.register_match.players.extend(packet_players)
