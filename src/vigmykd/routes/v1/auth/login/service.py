@@ -74,8 +74,8 @@ async def login(
         "uid": sought["uuid"],
         "iat": get_int_from_datetime(now),
         "exp": jwt_ext,
-        "elo": sought["elo"],
-        "games_played": sought["games_played"]
+        "elo": sought.get("elo", 1200),
+        "games_played": sought.get("games_played", 0),
     }
 
     try:

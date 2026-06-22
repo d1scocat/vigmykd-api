@@ -53,11 +53,11 @@ async def end(
     if not winner or not loser:
         return err(400, "Could not find the winner or the loser")
 
-    winner_elo = winner["elo"]
-    loser_elo = loser["elo"]
+    winner_elo = winner.get("elo", 1200)
+    loser_elo = loser.get("elo", 1200)
 
-    winner_games_played = winner["games_played"]
-    loser_games_played = loser["games_played"]
+    winner_games_played = winner.get("games_played", 0)
+    loser_games_played = loser.get("games_played", 0)
 
     winner_k = 64 if winner_games_played < 10 else 32
     loser_k = 64 if loser_games_played < 10 else 32
